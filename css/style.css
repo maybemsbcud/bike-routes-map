@@ -11,23 +11,39 @@ body {
     color: #2c3e2d;
 }
 
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
 header {
     background-color: #2e7d32;
     padding: 24px;
     border-bottom: 4px solid #8b5a2b;
     color: #ffffff;
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
 }
 
 header h1 {
-    margin: 0 0 16px 0;
+    margin: 0;
     font-size: 2rem;
+    text-align: center;
+}
+
+header nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
 }
 
 header nav a {
     color: #ffffff;
     text-decoration: none;
-    margin-right: 20px;
     font-weight: bold;
 }
 
@@ -46,18 +62,21 @@ section {
 }
 
 #map img {
-    width: 100%;
-    display: block;
     border: 2px solid #8b5a2b;
     padding: 8px;
     background-color: #ffffff;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
 }
 
 .card {
     background-color: #ffffff;
     padding: 16px;
     border-radius: 8px;
-    margin-bottom: 16px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
@@ -97,4 +116,37 @@ footer {
     text-align: center;
     font-size: 0.875rem;
     color: #3e2723;
+}
+
+@media (min-width: 600px) {
+    header {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+    
+    .cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    main, aside {
+        max-width: 1200px;
+    }
+    
+    main {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 32px;
+        align-items: start;
+    }
+    
+    section {
+        margin-bottom: 0;
+    }
+
+    .cards {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
 }
