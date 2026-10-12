@@ -4,11 +4,11 @@
 
 body {
     margin: 0;
-    /* Типографіка: надійний системний беззасічковий шрифт для чистого вигляду */
+
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    font-size: 1rem;     /* Базовий текст: 16px */
+    font-size: 1rem;   
     line-height: 1.5;
-    background-color: #f4f6f4; /* Нейтральний фон */
+    background-color: #f4f6f4; 
     color: #1a1a1a;
 }
 
@@ -19,9 +19,9 @@ img {
 }
 
 header {
-    background-color: #1b5e20; /* Більш глибокий і контрастний "спортивний" зелений */
+    background-color: #1b5e20; 
     padding: 24px;
-    border-bottom: 4px solid #b35000; /* Насичений помаранчевий акцент */
+    border-bottom: 4px solid #b35000; 
     color: #ffffff;
     display: flex;
     flex-direction: column;
@@ -49,7 +49,7 @@ header nav a {
     color: #ffffff;
     text-decoration: none;
     font-weight: 700;
-    font-size: 1.125rem; /* 18px */
+    font-size: 1.125rem; 
     transition: color 0.2s ease;
 }
 
@@ -69,7 +69,7 @@ section {
 }
 
 h2 {
-    font-size: 1.75rem; /* 28px */
+    font-size: 1.75rem;
     color: #1b5e20;
     margin-top: 0;
     margin-bottom: 24px;
@@ -99,16 +99,15 @@ h2 {
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     display: flex;
     flex-direction: column;
-    gap: 12px; /* Принцип близькості: рівномірні відступи всередині картки */
+    gap: 12px; 
 }
 
 .card h3 {
     margin: 0;
-    font-size: 1.25rem; /* 20px */
+    font-size: 1.25rem; 
     color: #2c3e2d;
 }
 
-/* Деталь 14 варіанта: довжина маршруту як виразне число */
 .route-length {
     font-size: 1rem;
     color: #555;
@@ -116,7 +115,7 @@ h2 {
 }
 
 .route-length span {
-    font-size: 2.5rem; /* 40px */
+    font-size: 2.5rem; 
     font-weight: 900;
     color: #b35000;
     line-height: 1;
@@ -124,7 +123,7 @@ h2 {
 
 .route-difficulty {
     margin: 0;
-    margin-top: auto; /* Відштовхує бейдж у самий низ картки */
+    margin-top: auto; 
     font-weight: 600;
 }
 
@@ -132,23 +131,23 @@ h2 {
     display: inline-block;
     padding: 6px 12px;
     border-radius: 16px;
-    font-size: 0.875rem; /* 14px */
+    font-size: 0.875rem;
     font-weight: 700;
     color: #ffffff;
     margin-left: 8px;
 }
 
-/* Чітка вимога 14 варіанта: контраст >= 4.5:1 для кольорів індикатора */
+
 .badge--easy {
-    background-color: #2e7d32; /* Контраст з білим: ~4.8:1 */
+    background-color: #2e7d32; 
 }
 
 .badge--medium {
-    background-color: #b35000; /* Контраст з білим: ~4.6:1 */
+    background-color: #b35000; 
 }
 
 .badge--hard {
-    background-color: #c62828; /* Контраст з білим: ~5.1:1 */
+    background-color: #c62828; 
 }
 
 aside {
