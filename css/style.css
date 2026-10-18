@@ -101,7 +101,6 @@ h2 {
     gap: 12px; 
 }
 
-/* Динамічні класи для 7-ї лаби */
 .card.easy {
     border-left-color: #2e7d32;
 }
