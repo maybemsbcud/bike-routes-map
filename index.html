@@ -24,21 +24,18 @@
 
         <section id="routes">
             <h2>Маршрути</h2>
-            <div class="cards">
-                <article class="card">
+            <!-- Елемент підсумку для Кроку 9 -->
+            <p id="total-km" style="font-weight: 800; font-size: 1.25rem; color: #b35000; margin-bottom: 20px;">
+                Загальна довжина: 0 км
+            </p>
+            
+            <!-- Контейнер для списку (додано id="routes-list") -->
+            <div id="routes-list" class="cards">
+                <!-- Статичні картки для демонстрації Кроку 2 (скрипт їх видалить) -->
+                <article class="card static-example">
                     <h3>ВДНГ - Голосієво</h3>
                     <div class="route-length"><span>10</span> км</div>
                     <p class="route-difficulty">Складність: <span class="badge badge--easy">Легка</span></p>
-                </article>
-                <article class="card">
-                    <h3>Пуща-Водиця</h3>
-                    <div class="route-length"><span>25</span> км</div>
-                    <p class="route-difficulty">Складність: <span class="badge badge--medium">Середня</span></p>
-                </article>
-                <article class="card">
-                    <h3>Голосіївський ліс (Трейл)</h3>
-                    <div class="route-length"><span>15</span> км</div>
-                    <p class="route-difficulty">Складність: <span class="badge badge--hard">Важка</span></p>
                 </article>
             </div>
         </section>
@@ -52,7 +49,5 @@
     <footer>
         <p>&copy; 2026 Левченко Данило, група ІП-56</p>
     </footer>
-
-    <script src="js/app.js"></script>
 </body>
 </html>
