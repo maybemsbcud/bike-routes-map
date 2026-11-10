@@ -84,11 +84,19 @@ h2 {
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
+.routes-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
 .filter-wrapper {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 16px;
     background-color: #ffffff;
     padding: 12px 16px;
     border-radius: 8px;
@@ -112,6 +120,52 @@ h2 {
 
 .filter-wrapper select:focus {
     border-color: #1b5e20;
+}
+
+.btn-refresh {
+    background-color: #ffffff;
+    color: #1b5e20;
+    border: 2px solid #1b5e20;
+    padding: 10px 18px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.btn-refresh:hover:not(:disabled) {
+    background-color: #1b5e20;
+    color: #ffffff;
+}
+
+.btn-refresh:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.loading-indicator {
+    background-color: #e8f5e9;
+    color: #1b5e20;
+    border: 1px solid #81c784;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+.error-message {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ef9a9a;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+.hidden {
+    display: none !important;
 }
 
 .cards {
@@ -260,192 +314,6 @@ footer {
 
     #add-route {
         grid-column: 1 / -1;
-    }
-    
-    section {
-        margin-bottom: 0;
-    }
-
-    .cards {
-        grid-template-columns: 1fr;
-        gap: 24px;
-    }
-}*, *::before, *::after {
-    box-sizing: border-box;
-}
-
-body {
-    margin: 0;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    font-size: 1rem;   
-    line-height: 1.5;
-    background-color: #f4f6f4; 
-    color: #1a1a1a;
-}
-
-img {
-    max-width: 100%;
-    height: auto;
-    display: block;
-}
-
-header {
-    background-color: #1b5e20; 
-    padding: 24px;
-    border-bottom: 4px solid #b35000; 
-    color: #ffffff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-}
-
-header h1 {
-    margin: 0;
-    font-size: 2.25rem; 
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    text-align: center;
-}
-
-header nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 24px;
-    justify-content: center;
-}
-
-header nav a {
-    color: #ffffff;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 1.125rem; 
-    transition: color 0.2s ease;
-}
-
-header nav a:hover {
-    color: #ffb74d;
-    text-decoration: underline;
-}
-
-main {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 32px 20px;
-}
-
-section {
-    margin-bottom: 48px;
-}
-
-h2 {
-    font-size: 1.75rem;
-    color: #1b5e20;
-    margin-top: 0;
-    margin-bottom: 24px;
-    border-bottom: 2px solid #e0e0e0;
-    padding-bottom: 8px;
-}
-
-#map img {
-    border: 3px solid #1b5e20;
-    border-radius: 8px;
-    padding: 4px;
-    background-color: #ffffff;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-
-.cards {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 20px;
-}
-
-.card {
-    background-color: #ffffff;
-    padding: 24px;
-    border-radius: 12px;
-    border-left: 6px solid #1b5e20; /* Базовий колір */
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    display: flex;
-    flex-direction: column;
-    gap: 12px; 
-}
-
-.card.easy {
-    border-left-color: #2e7d32;
-}
-
-.card.medium {
-    border-left-color: #b35000;
-}
-
-.card.hard {
-    border-left-color: #c62828;
-}
-
-.card h3 {
-    margin: 0;
-    font-size: 1.25rem; 
-    color: #2c3e2d;
-}
-
-/* Стиль для динамічного p елемента */
-.card p {
-    font-size: 1.125rem;
-    font-weight: 700;
-    color: #555;
-    margin: 0;
-    padding: 8px;
-    background-color: #f4f6f4;
-    border-radius: 6px;
-    display: inline-block;
-}
-
-aside {
-    max-width: 800px;
-    margin: 0 auto 48px auto;
-    padding: 24px;
-    background-color: #e8f5e9;
-    border-radius: 12px;
-    border: 2px dashed #2e7d32;
-}
-
-aside h2 {
-    border-bottom: none;
-    margin-bottom: 12px;
-}
-
-footer {
-    background-color: #d7ccc8;
-    padding: 32px 20px;
-    text-align: center;
-    font-size: 0.875rem;
-    color: #3e2723;
-}
-
-@media (min-width: 600px) {
-    header {
-        flex-direction: row;
-        justify-content: space-between;
-    }
-    
-    .cards {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (min-width: 1024px) {
-    main, aside {
-        max-width: 1200px;
-    }
-    
-    main {
-        display: grid;
-        grid-template-columns: 2fr 1fr;
-        gap: 40px;
-        align-items: start;
     }
     
     section {
