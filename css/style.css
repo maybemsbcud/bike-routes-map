@@ -209,10 +209,34 @@ h2 {
     border-left-color: #c62828;
 }
 
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
 .card h3 {
     margin: 0;
     font-size: 1.25rem; 
     color: #2c3e2d;
+}
+
+.btn-delete {
+    background: transparent;
+    border: none;
+    color: #999;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.btn-delete:hover {
+    color: #c62828;
+    background-color: #ffebee;
 }
 
 .card p {

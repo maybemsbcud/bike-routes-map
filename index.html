@@ -61,6 +61,7 @@
                         :city="route.city"
                         :selected="selectedRouteId === route.id"
                         @select="selectRoute"
+                        @delete="removeRoute"
                     ></route-card>
                 </div>
             </section>
