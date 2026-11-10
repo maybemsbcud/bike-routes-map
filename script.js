@@ -1,25 +1,10 @@
-console.log('script.js підключено');
+// Обрано фреймворк Vue 3, оскільки його глобальна CDN-збірка дозволяє створювати реактивні компоненти без компіляції JSX у браузері та має декларативний синтаксис шаблонів і обчислюваних властивостей (computed).
 
 const API_URL = 'https://jsonplaceholder.typicode.com/users';
+const AVERAGE_SPEED_KMH = 15;
 
-let routes = [];
-
-const staticCards = document.querySelectorAll('.card');
-staticCards.forEach(card => card.remove());
-
-const listContainer = document.querySelector('#routes-list');
-const totalKmElement = document.querySelector('#total-km');
-
-const form = document.querySelector('#route-form');
-const nameInput = document.querySelector('#route-name');
-const kmInput = document.querySelector('#route-km');
-const difficultyInput = document.querySelector('#route-difficulty');
-const filterSelect = document.querySelector('#filter-difficulty');
-
-const btnRefresh = document.querySelector('#btn-refresh');
-const loadingIndicator = document.querySelector('#loading-indicator');
-const errorMessage = document.querySelector('#error-message');
-
+/*
+Функцію ручного рендеру з практикуму 7 закоментовано, оскільки її замінено декларативним Vue-компонентом RouteCard:
 const renderRoutes = (routesArray) => {
     listContainer.innerHTML = ''; 
     let totalKm = 0;
@@ -55,80 +40,128 @@ const renderRoutes = (routesArray) => {
         totalKmElement.textContent = `Загальна довжина: ${totalKm} км`;
     }
 };
+*/
 
-const applyFilter = () => {
-    const selectedDifficulty = filterSelect.value;
-    if (selectedDifficulty === 'Всі') {
-        renderRoutes(routes);
-    } else {
-        const filteredRoutes = routes.filter(route => route.difficulty === selectedDifficulty);
-        renderRoutes(filteredRoutes);
-    }
-};
-
-// Завантаження списку маршрутів через JSONPlaceholder API (https://jsonplaceholder.typicode.com/users)
-const loadData = async () => {
-    loadingIndicator.classList.remove('hidden');
-    errorMessage.classList.add('hidden');
-    errorMessage.textContent = '';
-    btnRefresh.disabled = true;
-
-    try {
-        const response = await fetch(API_URL);
-        if (!response.ok) {
-            throw new Error(`Помилка сервера: код ${response.status}`);
+const RouteCard = {
+    props: ['id', 'name', 'lengthKm', 'difficulty', 'city', 'selected'],
+    emits: ['select'],
+    computed: {
+        estimatedTimeHours() {
+            return (this.lengthKm / AVERAGE_SPEED_KMH).toFixed(1);
+        },
+        difficultyClass() {
+            if (this.difficulty === 'Легка') return 'easy';
+            if (this.difficulty === 'Середня') return 'medium';
+            if (this.difficulty === 'Важка') return 'hard';
+            return '';
         }
-        const data = await response.json();
-
-        const difficulties = ['Легка', 'Середня', 'Важка'];
-        routes = data.map((user, index) => ({
-            name: user.name,
-            km: (user.id * 3) + 7,
-            difficulty: difficulties[index % difficulties.length],
-            city: user.address?.city || 'Київ'
-        }));
-
-        applyFilter();
-    } catch (error) {
-        errorMessage.textContent = 'Не вдалося завантажити дані маршрутів. Перевірте з\'єднання з мережею.';
-        errorMessage.classList.remove('hidden');
-        console.error('Помилка при завантаженні даних:', error);
-    } finally {
-        loadingIndicator.classList.add('hidden');
-        btnRefresh.disabled = false;
-    }
+    },
+    template: `
+        <article
+            class="card"
+            :class="[difficultyClass, { selected: selected }]"
+            :data-km="lengthKm"
+            @click="$emit('select', id)"
+        >
+            <h3>{{ name }}</h3>
+            <p>{{ lengthKm }} км, {{ difficulty }}<span v-if="city"> • {{ city }}</span></p>
+            <div class="route-meta">
+                <span>Приблизний час у дорозі: ~{{ estimatedTimeHours }} год (15 км/год)</span>
+                <span class="route-status">{{ selected ? 'Обрано' : 'Детальніше →' }}</span>
+            </div>
+        </article>
+    `
 };
 
-// Валідація ліміту кілометражу на подію input
-kmInput.addEventListener('input', () => {
-    const kmValue = Number(kmInput.value);
-    if (kmValue > 300) {
-        kmInput.setCustomValidity('Довжина маршруту не може перевищувати 300 км');
-    } else {
-        kmInput.setCustomValidity('');
+Vue.createApp({
+    components: {
+        RouteCard
+    },
+    data() {
+        return {
+            routes: [],
+            selectedDifficulty: 'Всі',
+            isLoading: false,
+            errorMessage: '',
+            selectedRouteId: null,
+            newRoute: {
+                name: '',
+                lengthKm: '',
+                difficulty: ''
+            }
+        };
+    },
+    computed: {
+        filteredRoutes() {
+            if (this.selectedDifficulty === 'Всі') {
+                return this.routes;
+            }
+            return this.routes.filter(route => route.difficulty === this.selectedDifficulty);
+        },
+        totalKm() {
+            return Number(this.filteredRoutes.reduce((sum, route) => sum + Number(route.lengthKm), 0).toFixed(1));
+        },
+        selectedRoute() {
+            return this.routes.find(route => route.id === this.selectedRouteId) || null;
+        }
+    },
+    methods: {
+        async loadData() {
+            this.isLoading = true;
+            this.errorMessage = '';
+
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    throw new Error(`Помилка сервера: код ${response.status}`);
+                }
+                const data = await response.json();
+
+                const difficulties = ['Легка', 'Середня', 'Важка'];
+                this.routes = data.map((user, index) => ({
+                    id: user.id,
+                    name: user.name,
+                    lengthKm: (user.id * 3) + 7,
+                    difficulty: difficulties[index % difficulties.length],
+                    city: user.address?.city || 'Київ'
+                }));
+            } catch (error) {
+                this.errorMessage = 'Не вдалося завантажити дані маршрутів. Перевірте з\'єднання з мережею.';
+                console.error('Помилка при завантаженні даних:', error);
+            } finally {
+                this.isLoading = false;
+            }
+        },
+        selectRoute(id) {
+            this.selectedRouteId = this.selectedRouteId === id ? null : id;
+        },
+        validateKm(event) {
+            const kmValue = Number(event.target.value);
+            if (kmValue > 300) {
+                event.target.setCustomValidity('Довжина маршруту не може перевищувати 300 км');
+            } else {
+                event.target.setCustomValidity('');
+            }
+        },
+        addRoute() {
+            const nextId = this.routes.length > 0
+                ? Math.max(...this.routes.map(r => r.id)) + 1
+                : 1;
+
+            this.routes.push({
+                id: nextId,
+                name: this.newRoute.name,
+                lengthKm: Number(this.newRoute.lengthKm),
+                difficulty: this.newRoute.difficulty,
+                city: 'Київ'
+            });
+
+            this.newRoute.name = '';
+            this.newRoute.lengthKm = '';
+            this.newRoute.difficulty = '';
+        }
+    },
+    mounted() {
+        this.loadData();
     }
-});
-
-// Обробка відправки форми додавання маршруту
-form.addEventListener('submit', (event) => {
-    event.preventDefault();
-
-    const newRoute = {
-        name: nameInput.value.trim(),
-        km: Number(kmInput.value),
-        difficulty: difficultyInput.value,
-        city: 'Київ'
-    };
-
-    routes.push(newRoute);
-    applyFilter();
-    form.reset();
-});
-
-// Фільтрація списку маршрутів за обраною складністю
-filterSelect.addEventListener('change', applyFilter);
-
-// Повторний запит даних за кліком
-btnRefresh.addEventListener('click', loadData);
-
-loadData();
+}).mount('#app');
