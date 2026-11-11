@@ -182,7 +182,19 @@ h2 {
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     display: flex;
     flex-direction: column;
-    gap: 12px; 
+    gap: 12px;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.card.selected {
+    outline: 2px solid #1b5e20;
+    background-color: #f1f8e9;
 }
 
 .card.easy {
@@ -212,6 +224,21 @@ h2 {
     background-color: #f4f6f4;
     border-radius: 6px;
     display: inline-block;
+}
+
+.route-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    color: #2c3e2d;
+}
+
+.route-status {
+    font-weight: 700;
+    color: #1b5e20;
 }
 
 #route-form {
@@ -304,24 +331,9 @@ footer {
     main, aside {
         max-width: 1200px;
     }
-    
-    main {
-        display: grid;
-        grid-template-columns: 2fr 1fr;
-        gap: 40px;
-        align-items: start;
-    }
-
-    #add-route {
-        grid-column: 1 / -1;
-    }
-    
-    section {
-        margin-bottom: 0;
-    }
 
     .cards {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
         gap: 24px;
     }
 }

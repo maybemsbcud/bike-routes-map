@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Карта веломаршрутів</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="script.js" defer></script>
 </head>
 <body>
@@ -17,76 +18,92 @@
         </nav>
     </header>
 
-    <main>
-        <section id="map">
-            <h2>Карта</h2>
-            <img src="assets/img/map-placeholder.jpg" alt="Карта веломаршрутів міста">
-        </section>
+    <div id="app">
+        <main>
+            <section id="map">
+                <h2>Карта</h2>
+                <img src="assets/img/map-placeholder.jpg" alt="Карта веломаршрутів міста">
+            </section>
 
-        <section id="routes">
-            <h2>Маршрути</h2>
-            
-            <div class="routes-toolbar">
-                <div class="filter-wrapper">
-                    <label for="filter-difficulty">Фільтр за складністю:</label>
-                    <select id="filter-difficulty">
-                        <option value="Всі">Всі</option>
-                        <option value="Легка">Легка</option>
-                        <option value="Середня">Середня</option>
-                        <option value="Важка">Важка</option>
-                    </select>
+            <section id="routes">
+                <h2>Маршрути</h2>
+                
+                <div class="routes-toolbar">
+                    <div class="filter-wrapper">
+                        <label for="filter-difficulty">Фільтр за складністю:</label>
+                        <select id="filter-difficulty" v-model="selectedDifficulty">
+                            <option value="Всі">Всі</option>
+                            <option value="Легка">Легка</option>
+                            <option value="Середня">Середня</option>
+                            <option value="Важка">Важка</option>
+                        </select>
+                    </div>
+                    <button type="button" id="btn-refresh" class="btn-refresh" @click="loadData" :disabled="isLoading">
+                        Оновити маршрути
+                    </button>
                 </div>
-                <button type="button" id="btn-refresh" class="btn-refresh">Оновити маршрути</button>
+
+                <div id="loading-indicator" class="loading-indicator" v-if="isLoading">Завантаження маршрутів...</div>
+                <div id="error-message" class="error-message" v-if="errorMessage">{{ errorMessage }}</div>
+
+                <p id="total-km" style="font-weight: 800; font-size: 1.25rem; color: #b35000; margin-bottom: 20px;">
+                    Загальна довжина: {{ totalKm }} км
+                </p>
+                
+                <div id="routes-list" class="cards">
+                    <route-card
+                        v-for="route in filteredRoutes"
+                        :key="route.id"
+                        :id="route.id"
+                        :name="route.name"
+                        :length-km="route.lengthKm"
+                        :difficulty="route.difficulty"
+                        :city="route.city"
+                        :selected="selectedRouteId === route.id"
+                        @select="selectRoute"
+                    ></route-card>
+                </div>
+            </section>
+
+            <section id="add-route">
+                <h2>Додати новий маршрут</h2>
+                <form id="route-form" @submit.prevent="addRoute">
+                    <div class="form-group">
+                        <label for="route-name">Назва маршруту:</label>
+                        <input type="text" id="route-name" name="name" v-model.trim="newRoute.name" required placeholder="наприклад, Оболонська набережна">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="route-km">Довжина (км):</label>
+                        <input type="number" id="route-km" name="lengthKm" v-model.number="newRoute.lengthKm" @input="validateKm" min="0.1" step="any" required placeholder="наприклад, 12.5">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="route-difficulty">Складність:</label>
+                        <select id="route-difficulty" name="difficulty" v-model="newRoute.difficulty" required>
+                            <option value="" disabled>Оберіть складність</option>
+                            <option value="Легка">Легка</option>
+                            <option value="Середня">Середня</option>
+                            <option value="Важка">Важка</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Додати маршрут</button>
+                </form>
+            </section>
+        </main>
+
+        <aside>
+            <h2>Деталі обраного маршруту</h2>
+            <div v-if="selectedRoute">
+                <p><strong>Маршрут:</strong> {{ selectedRoute.name }}</p>
+                <p><strong>Місто:</strong> {{ selectedRoute.city }}</p>
+                <p><strong>Довжина:</strong> {{ selectedRoute.lengthKm }} км | <strong>Складність:</strong> {{ selectedRoute.difficulty }}</p>
+                <p><strong>Приблизний час у дорозі (15 км/год):</strong> ~{{ (selectedRoute.lengthKm / 15).toFixed(1) }} год</p>
             </div>
-
-            <div id="loading-indicator" class="loading-indicator hidden">Завантаження маршрутів...</div>
-            <div id="error-message" class="error-message hidden"></div>
-
-            <p id="total-km" style="font-weight: 800; font-size: 1.25rem; color: #b35000; margin-bottom: 20px;">
-                Загальна довжина: 0 км
-            </p>
-            
-            <div id="routes-list" class="cards">
-                <article class="card static-example">
-                    <h3>ВДНГ - Голосієво</h3>
-                    <div class="route-length"><span>10</span> км</div>
-                    <p class="route-difficulty">Складність: <span class="badge badge--easy">Легка</span></p>
-                </article>
-            </div>
-        </section>
-
-        <section id="add-route">
-            <h2>Додати новий маршрут</h2>
-            <form id="route-form">
-                <div class="form-group">
-                    <label for="route-name">Назва маршруту:</label>
-                    <input type="text" id="route-name" name="name" required placeholder="наприклад, Оболонська набережна">
-                </div>
-
-                <div class="form-group">
-                    <label for="route-km">Довжина (км):</label>
-                    <input type="number" id="route-km" name="lengthKm" min="0.1" step="any" required placeholder="наприклад, 12.5">
-                </div>
-
-                <div class="form-group">
-                    <label for="route-difficulty">Складність:</label>
-                    <select id="route-difficulty" name="difficulty" required>
-                        <option value="" disabled selected>Оберіть складність</option>
-                        <option value="Легка">Легка</option>
-                        <option value="Середня">Середня</option>
-                        <option value="Важка">Важка</option>
-                    </select>
-                </div>
-
-                <button type="submit" class="btn-submit">Додати маршрут</button>
-            </form>
-        </section>
-    </main>
-
-    <aside>
-        <h2>Деталі обраного маршруту</h2>
-        <p>Тут відображатиметься інформація про маршрут після його вибору.</p>
-    </aside>
+            <p v-else>Тут відображатиметься інформація про маршрут після його вибору.</p>
+        </aside>
+    </div>
 
     <footer>
         <p>&copy; 2026 Левченко Данило, група ІП-56</p>
