@@ -3,48 +3,104 @@
 const API_URL = 'https://jsonplaceholder.typicode.com/users';
 const AVERAGE_SPEED_KMH = 15;
 
-/*
-Функцію ручного рендеру з практикуму 7 закоментовано, оскільки її замінено декларативним Vue-компонентом RouteCard:
-const renderRoutes = (routesArray) => {
-    listContainer.innerHTML = ''; 
-    let totalKm = 0;
+// Збереження даних у localStorage
+function saveToLocalStorage(items) {
+    try {
+        localStorage.setItem('routes_data', JSON.stringify(items));
+    } catch (error) {
+        console.error('Помилка запису в localStorage:', error);
+    }
+}
 
-    routesArray.forEach(route => {
-        totalKm += route.km;
+// Зчитування даних із localStorage
+function loadFromLocalStorage() {
+    try {
+        const raw = localStorage.getItem('routes_data');
+        return raw ? JSON.parse(raw) : [];
+    } catch (error) {
+        console.error('Помилка зчитування з localStorage:', error);
+        return [];
+    }
+}
 
-        const card = document.createElement('article');
-        card.classList.add('card');
-        
-        const title = document.createElement('h3');
-        title.textContent = route.name;
-        
-        const details = document.createElement('p');
-        const cityInfo = route.city ? ` • ${route.city}` : '';
-        details.textContent = `${route.km} км, ${route.difficulty}${cityInfo}`;
-        
-        card.setAttribute('data-km', route.km);
-        
-        if (route.difficulty === 'Легка') {
-            card.classList.add('easy');
-        } else if (route.difficulty === 'Середня') {
-            card.classList.add('medium');
-        } else if (route.difficulty === 'Важка') {
-            card.classList.add('hard');
+const DB_NAME = 'BikeRoutesDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'routes';
+
+// Відкриття бази даних IndexedDB із створенням object store
+function openDB() {
+    return new Promise((resolve, reject) => {
+        if (!('indexedDB' in window)) {
+            reject(new Error('IndexedDB не підтримується браузером або недоступна'));
+            return;
         }
 
-        card.append(title, details);
-        listContainer.append(card);
-    });
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-    if (totalKmElement) {
-        totalKmElement.textContent = `Загальна довжина: ${totalKm} км`;
+        request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+            }
+        };
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+// Додавання або оновлення запису в IndexedDB
+async function putItem(item) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put(item);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+// Отримання всіх записів із IndexedDB
+async function getAllItems() {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const request = tx.objectStore(STORE_NAME).getAll();
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+// Видалення запису за id з IndexedDB
+async function deleteItem(id) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).delete(id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+// Одноразова міграція даних із localStorage до IndexedDB
+async function migrateLocalStorageToIndexedDB() {
+    const isMigrated = localStorage.getItem('routes_migrated');
+    if (isMigrated === 'true') {
+        return;
     }
-};
-*/
+
+    const localData = loadFromLocalStorage();
+    if (localData && localData.length > 0) {
+        for (const item of localData) {
+            await putItem(item);
+        }
+    }
+    localStorage.setItem('routes_migrated', 'true');
+}
 
 const RouteCard = {
     props: ['id', 'name', 'lengthKm', 'difficulty', 'city', 'selected'],
-    emits: ['select'],
+    emits: ['select', 'delete'],
     computed: {
         estimatedTimeHours() {
             return (this.lengthKm / AVERAGE_SPEED_KMH).toFixed(1);
@@ -63,7 +119,15 @@ const RouteCard = {
             :data-km="lengthKm"
             @click="$emit('select', id)"
         >
-            <h3>{{ name }}</h3>
+            <div class="card-header">
+                <h3>{{ name }}</h3>
+                <button
+                    type="button"
+                    class="btn-delete"
+                    title="Видалити маршрут"
+                    @click.stop="$emit('delete', id)"
+                >✕</button>
+            </div>
             <p>{{ lengthKm }} км, {{ difficulty }}<span v-if="city"> • {{ city }}</span></p>
             <div class="route-meta">
                 <span>Приблизний час у дорозі: ~{{ estimatedTimeHours }} год (15 км/год)</span>
@@ -106,7 +170,54 @@ Vue.createApp({
         }
     },
     methods: {
+        async initData() {
+            this.isLoading = true;
+            this.errorMessage = '';
+
+            try {
+                // Спроба міграції даних із localStorage
+                await migrateLocalStorageToIndexedDB();
+
+                // Отримання записів зі сховища IndexedDB
+                let dbRoutes = await getAllItems();
+
+                // Якщо база порожня, завантажуємо початкові дані з API
+                if (!dbRoutes || dbRoutes.length === 0) {
+                    const response = await fetch(API_URL);
+                    if (!response.ok) {
+                        throw new Error(`Помилка сервера: код ${response.status}`);
+                    }
+                    const data = await response.json();
+
+                    const difficulties = ['Легка', 'Середня', 'Важка'];
+                    const initialRoutes = data.map((user, index) => ({
+                        id: user.id,
+                        name: user.name,
+                        lengthKm: (user.id * 3) + 7,
+                        difficulty: difficulties[index % difficulties.length],
+                        city: user.address?.city || 'Київ'
+                    }));
+
+                    // Зберігаємо первинний стан у localStorage та IndexedDB
+                    saveToLocalStorage(initialRoutes);
+                    for (const r of initialRoutes) {
+                        await putItem(r);
+                    }
+                    dbRoutes = initialRoutes;
+                }
+
+                this.routes = dbRoutes;
+            } catch (error) {
+                this.errorMessage = 'Помилка доступу до локального сховища або мережі: ' + error.message;
+                console.error(error);
+                // Резервний варіант зчитування з localStorage у разі блокування IndexedDB
+                this.routes = loadFromLocalStorage();
+            } finally {
+                this.isLoading = false;
+            }
+        },
         async loadData() {
+            // Ручне оновлення даних з API
             this.isLoading = true;
             this.errorMessage = '';
 
@@ -118,16 +229,23 @@ Vue.createApp({
                 const data = await response.json();
 
                 const difficulties = ['Легка', 'Середня', 'Важка'];
-                this.routes = data.map((user, index) => ({
+                const freshRoutes = data.map((user, index) => ({
                     id: user.id,
                     name: user.name,
                     lengthKm: (user.id * 3) + 7,
                     difficulty: difficulties[index % difficulties.length],
                     city: user.address?.city || 'Київ'
                 }));
+
+                for (const r of freshRoutes) {
+                    await putItem(r);
+                }
+                saveToLocalStorage(freshRoutes);
+
+                this.routes = await getAllItems();
             } catch (error) {
-                this.errorMessage = 'Не вдалося завантажити дані маршрутів. Перевірте з\'єднання з мережею.';
-                console.error('Помилка при завантаженні даних:', error);
+                this.errorMessage = 'Не вдалося оновити дані. ' + error.message;
+                console.error(error);
             } finally {
                 this.isLoading = false;
             }
@@ -143,25 +261,46 @@ Vue.createApp({
                 event.target.setCustomValidity('');
             }
         },
-        addRoute() {
+        async addRoute() {
             const nextId = this.routes.length > 0
-                ? Math.max(...this.routes.map(r => r.id)) + 1
+                ? Math.max(...this.routes.map(r => Number(r.id) || 0)) + 1
                 : 1;
 
-            this.routes.push({
+            const newRouteItem = {
                 id: nextId,
                 name: this.newRoute.name,
                 lengthKm: Number(this.newRoute.lengthKm),
                 difficulty: this.newRoute.difficulty,
                 city: 'Київ'
-            });
+            };
 
-            this.newRoute.name = '';
-            this.newRoute.lengthKm = '';
-            this.newRoute.difficulty = '';
+            try {
+                await putItem(newRouteItem);
+                this.routes = await getAllItems();
+                saveToLocalStorage(this.routes);
+
+                this.newRoute.name = '';
+                this.newRoute.lengthKm = '';
+                this.newRoute.difficulty = '';
+            } catch (error) {
+                this.errorMessage = 'Не вдалося зберегти новий маршрут: ' + error.message;
+            }
+        },
+        async removeRoute(id) {
+            try {
+                await deleteItem(id);
+                this.routes = await getAllItems();
+                saveToLocalStorage(this.routes);
+
+                if (this.selectedRouteId === id) {
+                    this.selectedRouteId = null;
+                }
+            } catch (error) {
+                this.errorMessage = 'Не вдалося видалити маршрут: ' + error.message;
+            }
         }
     },
     mounted() {
-        this.loadData();
+        this.initData();
     }
 }).mount('#app');
