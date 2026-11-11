@@ -1,10 +1,8 @@
 console.log('script.js підключено');
 
-const routes = [
-    { name: 'ВДНГ - Голосієво', km: 10, difficulty: 'Легка' },
-    { name: 'Пуща-Водиця', km: 25, difficulty: 'Середня' },
-    { name: 'Голосіївський ліс (Трейл)', km: 15, difficulty: 'Важка' }
-];
+const API_URL = 'https://jsonplaceholder.typicode.com/users';
+
+let routes = [];
 
 const staticCards = document.querySelectorAll('.card');
 staticCards.forEach(card => card.remove());
@@ -17,6 +15,10 @@ const nameInput = document.querySelector('#route-name');
 const kmInput = document.querySelector('#route-km');
 const difficultyInput = document.querySelector('#route-difficulty');
 const filterSelect = document.querySelector('#filter-difficulty');
+
+const btnRefresh = document.querySelector('#btn-refresh');
+const loadingIndicator = document.querySelector('#loading-indicator');
+const errorMessage = document.querySelector('#error-message');
 
 const renderRoutes = (routesArray) => {
     listContainer.innerHTML = ''; 
@@ -32,7 +34,8 @@ const renderRoutes = (routesArray) => {
         title.textContent = route.name;
         
         const details = document.createElement('p');
-        details.textContent = `${route.km} км, ${route.difficulty}`;
+        const cityInfo = route.city ? ` • ${route.city}` : '';
+        details.textContent = `${route.km} км, ${route.difficulty}${cityInfo}`;
         
         card.setAttribute('data-km', route.km);
         
@@ -63,6 +66,39 @@ const applyFilter = () => {
     }
 };
 
+// Завантаження списку маршрутів через JSONPlaceholder API (https://jsonplaceholder.typicode.com/users)
+const loadData = async () => {
+    loadingIndicator.classList.remove('hidden');
+    errorMessage.classList.add('hidden');
+    errorMessage.textContent = '';
+    btnRefresh.disabled = true;
+
+    try {
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+            throw new Error(`Помилка сервера: код ${response.status}`);
+        }
+        const data = await response.json();
+
+        const difficulties = ['Легка', 'Середня', 'Важка'];
+        routes = data.map((user, index) => ({
+            name: user.name,
+            km: (user.id * 3) + 7,
+            difficulty: difficulties[index % difficulties.length],
+            city: user.address?.city || 'Київ'
+        }));
+
+        applyFilter();
+    } catch (error) {
+        errorMessage.textContent = 'Не вдалося завантажити дані маршрутів. Перевірте з\'єднання з мережею.';
+        errorMessage.classList.remove('hidden');
+        console.error('Помилка при завантаженні даних:', error);
+    } finally {
+        loadingIndicator.classList.add('hidden');
+        btnRefresh.disabled = false;
+    }
+};
+
 // Валідація ліміту кілометражу на подію input
 kmInput.addEventListener('input', () => {
     const kmValue = Number(kmInput.value);
@@ -80,7 +116,8 @@ form.addEventListener('submit', (event) => {
     const newRoute = {
         name: nameInput.value.trim(),
         km: Number(kmInput.value),
-        difficulty: difficultyInput.value
+        difficulty: difficultyInput.value,
+        city: 'Київ'
     };
 
     routes.push(newRoute);
@@ -91,4 +128,7 @@ form.addEventListener('submit', (event) => {
 // Фільтрація списку маршрутів за обраною складністю
 filterSelect.addEventListener('change', applyFilter);
 
-renderRoutes(routes);
+// Повторний запит даних за кліком
+btnRefresh.addEventListener('click', loadData);
+
+loadData();

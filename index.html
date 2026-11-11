@@ -26,15 +26,21 @@
         <section id="routes">
             <h2>Маршрути</h2>
             
-            <div class="filter-wrapper">
-                <label for="filter-difficulty">Фільтр за складністю:</label>
-                <select id="filter-difficulty">
-                    <option value="Всі">Всі</option>
-                    <option value="Легка">Легка</option>
-                    <option value="Середня">Середня</option>
-                    <option value="Важка">Важка</option>
-                </select>
+            <div class="routes-toolbar">
+                <div class="filter-wrapper">
+                    <label for="filter-difficulty">Фільтр за складністю:</label>
+                    <select id="filter-difficulty">
+                        <option value="Всі">Всі</option>
+                        <option value="Легка">Легка</option>
+                        <option value="Середня">Середня</option>
+                        <option value="Важка">Важка</option>
+                    </select>
+                </div>
+                <button type="button" id="btn-refresh" class="btn-refresh">Оновити маршрути</button>
             </div>
+
+            <div id="loading-indicator" class="loading-indicator hidden">Завантаження маршрутів...</div>
+            <div id="error-message" class="error-message hidden"></div>
 
             <p id="total-km" style="font-weight: 800; font-size: 1.25rem; color: #b35000; margin-bottom: 20px;">
                 Загальна довжина: 0 км
