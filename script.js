@@ -252,6 +252,180 @@ Vue.createApp({
         },
         selectRoute(id) {
             this.selectedRouteId = this.selectedRouteId === id ? null : id;
+            if (this.selectedRouteId) {
+                this.$nextTick(() => {
+                    this.startElevationAnimation();
+                });
+            } else {
+                this.stopElevationAnimation();
+            }
+        },
+        replayAnimation() {
+            this.startElevationAnimation();
+        },
+        // Розрахунок умовних точок рельєфу висоти за даними маршруту
+        getElevationPoints(route) {
+            if (!route) return [];
+            const numPoints = 10;
+            const stepKm = route.lengthKm / (numPoints - 1);
+
+            let baseAlt = 120;
+            let variation = 25;
+            if (route.difficulty === 'Середня') {
+                baseAlt = 140;
+                variation = 50;
+            } else if (route.difficulty === 'Важка') {
+                baseAlt = 160;
+                variation = 95;
+            }
+
+            const points = [];
+            for (let i = 0; i < numPoints; i++) {
+                const km = Number((i * stepKm).toFixed(1));
+                // Детермінований розрахунок висоти на основі id маршруту та індексу точки
+                const wave1 = Math.sin((i + route.id) * 0.9);
+                const wave2 = Math.cos((i * 1.5) + route.id);
+                const altitude = Math.round(baseAlt + (wave1 * variation * 0.6) + (wave2 * variation * 0.4));
+                points.push({ km, altitude });
+            }
+            return points;
+        },
+        stopElevationAnimation() {
+            if (this.elevationAnimId) {
+                cancelAnimationFrame(this.elevationAnimId);
+                this.elevationAnimId = null;
+            }
+        },
+        // Запуск циклу анімації малювання профілю висоти на Canvas
+        startElevationAnimation() {
+            this.stopElevationAnimation();
+
+            const canvas = document.querySelector('#elevation-chart');
+            if (!canvas || !this.selectedRoute) return;
+
+            const ctx = canvas.getContext('2d');
+            const points = this.getElevationPoints(this.selectedRoute);
+            if (points.length < 2) return;
+
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = { top: 30, right: 30, bottom: 40, left: 55 };
+
+            const chartW = width - padding.left - padding.right;
+            const chartH = height - padding.top - padding.bottom;
+
+            const minAlt = Math.min(...points.map(p => p.altitude)) - 10;
+            const maxAlt = Math.max(...points.map(p => p.altitude)) + 15;
+            const maxKm = points[points.length - 1].km || 1;
+
+            const toCanvasCoords = (km, alt) => {
+                const x = padding.left + (km / maxKm) * chartW;
+                const y = padding.top + chartH - ((alt - minAlt) / (maxAlt - minAlt)) * chartH;
+                return { x, y };
+            };
+
+            let progress = 0;
+            const durationFrames = 60; // приблизно 1 секунда при 60 FPS
+
+            const renderFrame = () => {
+                progress = Math.min(progress + (1 / durationFrames), 1);
+
+                // Очищення попереднього кадру
+                ctx.clearRect(0, 0, width, height);
+
+                // Малювання координатної сітки та міток осей
+                ctx.strokeStyle = '#e0e0e0';
+                ctx.lineWidth = 1;
+                ctx.fillStyle = '#666';
+                ctx.font = '12px system-ui, sans-serif';
+
+                const gridLines = 4;
+                for (let i = 0; i <= gridLines; i++) {
+                    const y = padding.top + (chartH / gridLines) * i;
+                    const altVal = Math.round(maxAlt - ((maxAlt - minAlt) / gridLines) * i);
+                    ctx.beginPath();
+                    ctx.moveTo(padding.left, y);
+                    ctx.lineTo(width - padding.right, y);
+                    ctx.stroke();
+                    ctx.fillText(`${altVal} м`, 10, y + 4);
+                }
+
+                // Вісь X з відмітками відстані
+                ctx.beginPath();
+                ctx.moveTo(padding.left, padding.top + chartH);
+                ctx.lineTo(width - padding.right, padding.top + chartH);
+                ctx.strokeStyle = '#9e9e9e';
+                ctx.stroke();
+
+                for (let i = 0; i < points.length; i += 2) {
+                    const p = points[i];
+                    const { x } = toCanvasCoords(p.km, p.altitude);
+                    ctx.fillText(`${p.km} км`, x - 12, height - 15);
+                }
+
+                // Визначення видимих точок для поточного поступу анімації
+                const currentDistance = maxKm * progress;
+                const visiblePoints = [];
+
+                for (let i = 0; i < points.length; i++) {
+                    if (points[i].km <= currentDistance) {
+                        visiblePoints.push(toCanvasCoords(points[i].km, points[i].altitude));
+                    } else {
+                        // Інтерполяція останньої проміжної точки
+                        const prev = points[i - 1];
+                        const curr = points[i];
+                        const t = (currentDistance - prev.km) / (curr.km - prev.km);
+                        const interAlt = prev.altitude + t * (curr.altitude - prev.altitude);
+                        visiblePoints.push(toCanvasCoords(currentDistance, interAlt));
+                        break;
+                    }
+                }
+
+                if (visiblePoints.length > 1) {
+                    // Заповнення фонового градієнта під графіком висоти
+                    const gradient = ctx.createLinearGradient(0, padding.top, 0, padding.top + chartH);
+                    gradient.addColorStop(0, 'rgba(46, 125, 50, 0.35)');
+                    gradient.addColorStop(1, 'rgba(46, 125, 50, 0.02)');
+
+                    ctx.beginPath();
+                    ctx.moveTo(visiblePoints[0].x, padding.top + chartH);
+                    for (const pt of visiblePoints) {
+                        ctx.lineTo(pt.x, pt.y);
+                    }
+                    ctx.lineTo(visiblePoints[visiblePoints.length - 1].x, padding.top + chartH);
+                    ctx.closePath();
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+
+                    // Малювання лінії профілю
+                    ctx.beginPath();
+                    ctx.moveTo(visiblePoints[0].x, visiblePoints[0].y);
+                    for (let i = 1; i < visiblePoints.length; i++) {
+                        ctx.lineTo(visiblePoints[i].x, visiblePoints[i].y);
+                    }
+                    ctx.strokeStyle = '#1b5e20';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+
+                    // Малювання точки велосипедиста на передньому краї анімації
+                    const leadPoint = visiblePoints[visiblePoints.length - 1];
+                    ctx.beginPath();
+                    ctx.arc(leadPoint.x, leadPoint.y, 6, 0, Math.PI * 2);
+                    ctx.fillStyle = '#b35000';
+                    ctx.fill();
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                if (progress < 1) {
+                    this.elevationAnimId = requestAnimationFrame(renderFrame);
+                } else {
+                    this.elevationAnimId = null;
+                }
+            };
+
+            this.elevationAnimId = requestAnimationFrame(renderFrame);
         },
         validateKm(event) {
             const kmValue = Number(event.target.value);
@@ -294,6 +468,7 @@ Vue.createApp({
 
                 if (this.selectedRouteId === id) {
                     this.selectedRouteId = null;
+                    this.stopElevationAnimation();
                 }
             } catch (error) {
                 this.errorMessage = 'Не вдалося видалити маршрут: ' + error.message;
@@ -302,5 +477,8 @@ Vue.createApp({
     },
     mounted() {
         this.initData();
+    },
+    beforeUnmount() {
+        this.stopElevationAnimation();
     }
 }).mount('#app');

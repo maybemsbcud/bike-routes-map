@@ -332,6 +332,41 @@ aside h2 {
     margin-bottom: 12px;
 }
 
+.elevation-profile {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #c8d6c9;
+}
+
+.elevation-profile h3 {
+    margin: 0 0 12px 0;
+    font-size: 1.15rem;
+    color: #1b5e20;
+}
+
+.canvas-wrapper {
+    background: #ffffff;
+    border: 1px solid #c8d6c9;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+#elevation-chart {
+    display: block;
+    width: 100%;
+    max-width: 560px;
+    height: auto;
+    margin: 0 auto;
+}
+
+.chart-controls {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+}
+
 footer {
     background-color: #d7ccc8;
     padding: 32px 20px;
