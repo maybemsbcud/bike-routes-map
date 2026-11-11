@@ -263,6 +263,73 @@ h2 {
 .route-status {
     font-weight: 700;
     color: #1b5e20;
+    text-decoration: none;
+}
+
+.route-status:hover {
+    text-decoration: underline;
+}
+
+.filter-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.filter-link {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid #c8d6c9;
+    background-color: #f4f6f4;
+    color: #2c3e2d;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.filter-link:hover {
+    border-color: #1b5e20;
+    color: #1b5e20;
+}
+
+.filter-link.active-filter {
+    background-color: #1b5e20;
+    color: #ffffff;
+    border-color: #1b5e20;
+}
+
+.back-link {
+    display: inline-block;
+    color: #1b5e20;
+    font-weight: 700;
+    text-decoration: none;
+    margin-bottom: 12px;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.not-found {
+    background-color: #ffffff;
+    padding: 36px 24px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    text-align: center;
+    border-left: 6px solid #c62828;
+}
+
+.not-found p {
+    margin: 16px 0;
+    font-size: 1.1rem;
+}
+
+.not-found a.btn-refresh {
+    display: inline-block;
+    text-decoration: none;
+    margin-top: 8px;
 }
 
 #route-form {
